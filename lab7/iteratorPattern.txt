@@ -1,0 +1,201 @@
+/* Iterazione:
+Uno dei più comuni problemi della prog è l'iterazione di elementi di una
+"collezione" (array, insiemi, liste etc) per eseguire determinate azioni, per esempio
+trovare il primo elemento ( in base a certe proprietà), fare la sommatoria tra vari componenti o trovare il valore massimo/minimo.
+
+Per risolvere questo problema bisogna cercare un modo efficiente, lineare e che 
+sfrutti codice in grado di lavorare per + contenitori di oggetti.
+Ci sono diverse implementazioni di codice infatti che sfruttano gli steessi tipi di dati astratti,
+come gli array list e linked list. Si hanno a disposizione diversi tipi di dati astratti (lists, sets, maps etc).
+Ogni contenitore di oggetti generalizza la nozione di raccolta.
+*/
+
+//Esempio basilare di iterazione: 
+//requirement : works on both ArrayList and LinkedList
+public static int search(int e, List<Integer> ls){
+        for (int i = 0; i < ls.size(); i++)
+            if(ls.get(i) == e) //element at index i, implicit unboxing
+                return i;
+        return -1;
+}
+
+//Esempio con ArrayList:
+List<integer> list = new ArrayList<Integer> ();
+for(int i = 1;i <= 6; i++)
+    list.add(i); //appends i to the end of list
+assert search(5, list) == 4; //linear time complexity
+
+
+
+//Se applichiamo lo stesso metodo ai linked list otteniamo una complessità temporale quadratica:
+List<Integer> list = new LinkedList<Integer>();
+for(int i =0; i<= 6; i++)
+    list.add(i); //i a fine lista
+assert search(5, list) == 4; //complessità temporale quadratica
+
+/*Questo perchè l’interfaccia List < E > non è abbastanza astratta, non c’è separazione
+tra iterazione ed elementi processati, ed inoltre questo codice è specifico per le liste, quindi non è
+abbastanza generale.
+
+Per risolvere questo problema bisogna implementare un design pattern (modello di progettazione)
+quindi una soluzione generale per un determinato problema di programmazione.
+Con l'iterator pattern sfruttiamo un approccio basato su iteratori esterni,
+mentre usando iteratori interni stiamo sfruttando un altro modello ispirato dalla programmazione funzionale.
+
+Interfacce comuni:
+    -java.lang.Iterable<E> //oggetto iterato
+    -java.util.Iterator<E> //è l'iteratore
+L'oggetto iterable è un contenitore di oggetti su cui possiamo iterare, mentre l'iterator è un oggetto che 
+itera gli elementi dell'oggetto iterable.
+
+
+Sullo stesso contenitore iterable possiamo mettere molteplici iteratori:
+*/
+
+public interface Iterable<E> {
+    Iterator<E> iterator(); // factory method
+}
+
+public interface Iterator<E> {
+    boolean hasNext(); // returns true if the iteration has more elements
+    E next(); // returns the next element or throws NoSuchElementException
+    ... // other optional methods
+}
+
+
+//Ora possiamo implementare il modello search con l'iteratore imparato:
+public static int search(int e, List<Integer> ls) {
+    int res = 0;
+    Iterator<Integer> it = ls.iterator(); // returns a new iterator on ls
+    while (it.hasNext()) {
+        if (it.next() == e) return res;
+        res++;
+    }
+    return -1;
+}
+
+
+// more concise version with the enhanced for (for-each)
+public static int search(int e, List<Integer> ls) {
+    int res = 0;
+    for (int el : ls) { // for-each with iterable objects or arrays
+        if (el == e) return res;
+        res++;
+    }
+return -1;
+}
+
+/*Se per qualsiasi contenitore di interi (un array list, una linked list, un insieme, etc) voglio usare un
+singolo metodo per eseguire, ad esempio, la somma, dovrò fare come nell’esempio seguente:
+*/
+
+public static int sumAll(Collection<Integer> col) {
+    int res = 0;
+    Iterator<Integer> it = col.iterator(); // Collection<E> ≤ Iterable<E>
+    while (it.hasNext())
+        res += it.next();
+        return res;
+}
+
+// more concise version with the enhanced for (for-each)
+public static int sumAll(Collection<Integer> col) {
+    int res = 0;
+    for (int i : col) // Collection<E> ≤ Iterable<E>
+        res += i;
+        return res;
+}
+List<Integer> list = new LinkedList<Integer>();
+for (int i = 1; i <= 6; i++)
+    list.add(i); // appends i to the end of list
+    // list refers to [1,2,3,4,5,6]
+assert sumAll(list) == 21; // List<E> ≤ Collection<E>
+
+
+//Esempio che sfrutta due iteratori diversi sulla stessa LinkedList:
+List<Integer> ls = new LinkedList<>();
+for (int i = 1; i < 4; i++)
+    ls.add(i);
+Iterator<Integer> it = ls.iterator();
+Iterator<Integer> it2 = ls.iterator();
+int el = 1;
+while (it.hasNext()) {
+    assert it.next() == el; // iteration 1
+        el++;
+}
+assert !it.hasNext() && it2.hasNext();
+
+
+
+//Implementazione oggetto range;
+Range r = new Range(3); // interval between 0 (inclusive) and 3
+(exclusive)
+for (int x : r)
+    for (int y : r)
+        System.out.println(x + " " + y);
+
+
+Questo codice stamperà il seguente output:
+0 0
+0 1
+
+0 2
+1 0
+1 1
+1 2
+2 0
+2 1
+2 2
+
+public class Range implements Iterable<Integer> {
+// instance variables to be inserted here
+// a range from start (inclusive) to end (exclusive)
+    public Range(int start, int end) {...}
+        // a range from 0 (inclusive) to end (exclusive)
+    public Range(int end) {...}
+    @Override // implements the abstract method of Iterable
+    public RangeIterator iterator() {...}
+}
+class RangeIterator implements Iterator<Integer> {
+    // instance variables and constructors to be inserted here
+    @Override
+    public boolean hasNext() {...}
+    @Override
+    public Integer next() {...}
+
+
+/* Funzionalita java interessanti:
+
+Dichiarazione var -> con java 10 si può dichiarare variabili locali con var : variabili locali 
+senza dichiaraziione di tipo (tipo dedotto dal compilatore).
+Var può essere usato solo su variabili locali (dichiarare nei body di costruttori o metodi) 
+che devono essere iizializzate. I valori null, gli inizializzatori di array e gli autoriferimenti non
+sono supportati. 
+
+Esempio:
+var r = new Range(2); // inferred type: Range
+var it = r.iterator(); // inferred type: RangeIterator
+var el = it.next(); // inferred type: Integer
+// inferred type for s: HashSet<Integer>
+var s = new HashSet<>(Arrays.asList(new Integer[] { 1, 2, 3, 4 }));
+
+
+Metodi di default-> introdotti con java 8, sono metodi che possono essere
+contenuti in  un'interfacci aventi un body predefinito e preformattato
+che ne definisce anche il comportamento predefinito.
+Questi metodi vengono usati per motivi di riutilizzo del codice.
+
+Esempio d'uso: definizione di metood opzionale
+public interface Iterator<E> {
+    boolean hasNext();
+    E next();
+    // optional method, by default it throws UnsupportedOperationException
+    default void remove() {
+    throw new UnsupportedOperationException();
+    }
+    ...
+    var r = new Range(2);
+    var it = r.iterator();
+    it.next();
+    it.remove(); // throws UnsupportedOperationException
+}
+
